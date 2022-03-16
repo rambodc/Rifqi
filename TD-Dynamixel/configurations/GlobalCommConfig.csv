@@ -1,0 +1,4 @@
+Parameters, Value
+port, COM1
+baudrate, 57600
+protocol, 2
