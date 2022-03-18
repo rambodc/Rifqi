@@ -1,5 +1,3 @@
-MotorID, Type
-1, X_SERIES
-2, PRO_SERIES
-3, P_SERIES
-4, X_SERIES
+MotorID,Type,VelocityLimit( x0.229 rpm)
+1,X_SERIES,1023
+2,X_SERIES,1023
