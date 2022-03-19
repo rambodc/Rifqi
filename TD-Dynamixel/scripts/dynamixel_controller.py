@@ -131,6 +131,9 @@ def test_broadcast_ping():
         print(f"[ID: {dxl_id}] model version: {dxl_data_list.get(dxl_id)[0]} | firmware version: {dxl_data_list.get(dxl_id)[1]}")
 
 def broadcast_ping() -> List[int]:
+    '''
+    run broadcast ping to find all connected motors on the port
+    '''
     dxl_data_list, dxl_comm_result = PACKET_HANDLER.broadcastPing(PORT_HANDLER)
 
     if dxl_comm_result != COMM_SUCCESS:
@@ -145,6 +148,9 @@ def broadcast_ping() -> List[int]:
     return motors_id
 
 def dummy_broadcast_ping() -> List[int]:
+    '''
+    Broadcast ping simulation for getting number of connected motors and ther id's
+    '''
     motors_id = [1, 2, 15]
 
     for motor_id in motors_id:
@@ -167,15 +173,14 @@ WRITE_GOAL_VELOCITY = 'Writegoalvelocity'
 
 MOTORS: List[Motor] = []
 
+CONTROLLER_OP = op('DynamixelController')
 RAM_TABLE = op('DynamixelMotorsRAM')
 EEPROM_TABLE = op('DynamixelMotorsEEPROM')
 DEBUG_TABLE = op('Debug')
 
-COUNTER = 0
-
 def build_motors_selector_page(script_op):
-    page_motor_selector = script_op.appendCustomPage('Motor Selector')
-
+    page_motor_selector = script_op.appendCustomPage('Selector')
+    global MOTORS
     for motor in MOTORS:
         page_motor_selector.appendToggle(f'Motor{motor.ID}', label=f'Motor {motor.ID}')
 
@@ -219,16 +224,28 @@ def fill_debug_info(messages: List[str]):
     for message in messages:
         DEBUG_TABLE.appendRow([message])
 
-def get_connected_motors(motors_id):
+def update_connected_motors(motors_id):
+    global MOTORS
     MOTORS.clear()
     for motor_id in motors_id:
         MOTORS.append(Motor(motor_id, get_motor_type(motor_id)))
 
 def test_list_motors():
     messages = []
+    global MOTORS
     for motor in MOTORS:
         messages.append(motor.ID)
     fill_debug_info(messages)
+
+def get_selected_motors_id() -> List[int]:
+    selected_motors_id = []
+    global MOTORS
+    for motor in MOTORS:
+        is_selected = CONTROLLER_OP.par[f'Motor{motor.ID}'].val
+        if is_selected:
+            selected_motors_id.append(motor.ID)
+
+    return selected_motors_id
 
 def onSetupParameters(scriptOp):
     '''
@@ -240,10 +257,9 @@ def onSetupParameters(scriptOp):
     motors_id = dummy_broadcast_ping()
 
     # create motors based on GlobalMotorsConfig and check wether user the ID is present in the network
-    get_connected_motors(motors_id)
+    update_connected_motors(motors_id)
 
     build_motors_selector_page(scriptOp)
-
     build_eeprom_page(scriptOp)
     build_ram_page(scriptOp)
     build_torque_page(scriptOp)
@@ -256,12 +272,10 @@ def onPulse(par):
     '''
     called whenever custom pulse parameter is pushed
     '''
-    global COUNTER
-    COUNTER += 1
 
     button_name = par.name
     if button_name == READ_TORQUE:
-        pass
+        print(get_selected_motors_id())
     elif button_name == WRITE_TORQUE:
         pass
     elif button_name == READ_CURRENT_POSITION:
