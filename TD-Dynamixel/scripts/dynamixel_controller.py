@@ -151,6 +151,10 @@ def broadcast_ping() -> List[int]:
     for dxl_id in dxl_data_list:
         motors_id.append(dxl_id)
 
+    for motor_id in motors_id:
+        RAM_TABLE.appendRow([motor_id])
+        EEPROM_TABLE.appendRow([motor_id])
+
     return motors_id
 
 def dummy_broadcast_ping() -> List[int]:
@@ -384,10 +388,12 @@ def onSetupParameters(scriptOp):
     '''
     Setting up user interface and filling initial EEPROM and RAM from connected motors
     '''
+    open_port()
     fill_initial_eeprom_table()
     fill_initial_ram_table()
     # search for available motors
-    motors_id = dummy_broadcast_ping()
+    # motors_id = dummy_broadcast_ping()
+    motors_id = broadcast_ping()
 
     # create motors based on GlobalMotorsConfig and check wether user the ID is present in the network
     update_connected_motors(motors_id)
@@ -443,7 +449,8 @@ def handler_read_current_position():
 
     # send bulk read request to port
     comm_result = groupBulkRead.txRxPacket()
-    check_comm_result(comm_result)
+    if comm_result != COMM_SUCCESS:
+        raise CommError(f"{PACKET_HANDLER.getTxRxResult(comm_result)}")
 
     # retrieve data and write it to table for each selected motor
     for motor in motors:
@@ -453,7 +460,7 @@ def handler_read_current_position():
 
         # Get present position value
         present_position = groupBulkRead.getData(motor.ID, motor.ControlTable.PresentPosition.Address, motor.ControlTable.PresentPosition.DataSize)
-        write_to_table(present_position, RAM_TABLE, get_row_index_by_motor_id(motor.ID), RAM.PRESENT_POSITION)
+        write_to_table(present_position, RAM_TABLE, get_row_index_by_motor_id(motor.ID), RAM.PRESENT_POSITION.value)
 
     # Clear bulkread parameter storage
     groupBulkRead.clearParam()
