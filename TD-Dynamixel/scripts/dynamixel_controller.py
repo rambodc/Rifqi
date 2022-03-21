@@ -58,6 +58,12 @@ Motor and Control Table Class
 class MotorTypeNotSupported(Exception):
     pass
 
+class OperatingMode(Enum):
+    VELOCITY_CONTROL            = 1
+    POSITION_CONTROL            = 3
+    EXTENDED_POSITION_CONTROL   = 4
+    PWM_CONTROL                 = 16
+
 class DataAccess(Enum):
     READ_AND_WRITE = 1
     READ = 2
@@ -71,7 +77,8 @@ class ControlData:
 class ControlTable:
     def __init__(self, motor_type: str) -> None:
         if motor_type == 'X_SERIES' or motor_type == 'MX_SERIES':
-            self.TorqueEnable          = ControlData(64, 1, DataAccess.READ_AND_WRITE)
+            self.OperatingMode         = ControlData(11, 1, DataAccess.READ_AND_WRITE)
+            self.Torque                = ControlData(64, 1, DataAccess.READ_AND_WRITE)
             self.GoalVelocity          = ControlData(116, 4, DataAccess.READ_AND_WRITE)
             self.PresentPosition       = ControlData(132, 4, DataAccess.READ_AND_WRITE)
         elif motor_type == 'PRO_SERIES':
@@ -178,6 +185,121 @@ RAM_TABLE = op('DynamixelMotorsRAM')
 EEPROM_TABLE = op('DynamixelMotorsEEPROM')
 DEBUG_TABLE = op('Debug')
 
+# Dictionary for holding Row index and variable name
+class EEPROM(Enum):
+    ID                          = 0
+    MODEL_NUMBER                = 1
+    MODEL_INFORMATION           = 2
+    FIRMWARE_VERSION            = 3
+    BAUD_RATE                   = 4
+    RETURN_DELAY_TIME           = 5
+    DRIVE_MODE                  = 6
+    OPERATING_MODE              = 7
+    SECONDARY_SHADOW_ID         = 8
+    PROTOCOL_TYPE               = 9
+    HOMING_OFFSET               = 10
+    MOVING_THRESHOLD            = 11
+    TEMPERATURE_LIMIT           = 12
+    MAX_VOLTAGE_LIMIT           = 13
+    MIN_VOLTAGE_LIMIT           = 14
+    PWM_LIMIT                   = 15
+    VELOCITY_LIMIT              = 16
+    MAX_POSITION_LIMIT          = 17
+    MIN_POSITION_LIMIT          = 18
+    STARTUP_CONFIGURATION       = 19
+    SHUTDOWN                    = 20
+
+EEPROM_ROW_NAME_DICT = {
+    EEPROM.ID                    : "ID",
+    EEPROM.MODEL_NUMBER          : "Model Number",
+    EEPROM.MODEL_INFORMATION     : "Model Information",
+    EEPROM.FIRMWARE_VERSION      : "Firmware Version",
+    EEPROM.BAUD_RATE             : "Baud Rate",
+    EEPROM.RETURN_DELAY_TIME     : "Return Delay Time",
+    EEPROM.DRIVE_MODE            : "Drive Mode",
+    EEPROM.OPERATING_MODE        : "Operating Mode",
+    EEPROM.SECONDARY_SHADOW_ID   : "Secondary(Shadow) ID",
+    EEPROM.PROTOCOL_TYPE         : "Protocol Type",
+    EEPROM.HOMING_OFFSET         : "Homing Offset",
+    EEPROM.MOVING_THRESHOLD      : "Moving Threshold",
+    EEPROM.TEMPERATURE_LIMIT     : "Temperature Limit",
+    EEPROM.MAX_VOLTAGE_LIMIT     : "Max Voltage Limit",
+    EEPROM.MIN_VOLTAGE_LIMIT     : "Min Voltage Limit",
+    EEPROM.PWM_LIMIT             : "PWM Limit",
+    EEPROM.VELOCITY_LIMIT        : "Velocity Limit",
+    EEPROM.MAX_POSITION_LIMIT    : "Max Position Limit",
+    EEPROM.MIN_POSITION_LIMIT    : "Min Position Limit",
+    EEPROM.STARTUP_CONFIGURATION : "Startup Configuration",
+    EEPROM.SHUTDOWN              : "Shutdown"
+}
+
+class RAM(Enum):
+    ID                          = 0
+    TORQUE                      = 1
+    LED                         = 2
+    STATUS_RETURN_LEVEL         = 3
+    REGISTERED_INSTRUCTION      = 4
+    HARDWARE_ERROR_STATUS       = 5
+    VELOCITY_I_GAIN             = 6
+    VELOCITY_P_GAIN             = 7
+    POSITION_D_GAIN             = 8
+    POSITION_I_GAIN             = 9
+    POSITION_P_GAIN             = 10
+    FEEDFORWARD_2ND_GAIN        = 11
+    FEEDFORWARD_1ST_GAIN        = 12
+    BUS_WATCHDOG                = 13
+    GOAL_PWM                    = 14
+    GOAL_VELOCITY               = 15
+    PROFILE_ACCELERATION        = 16
+    PROFILE_VELOCITY            = 17
+    GOAL_POSITION               = 18
+    REALTIME_TICK               = 19
+    MOVING                      = 20
+    MOVING_STATUS               = 21
+    PRESENT_PWM                 = 22
+    PRESENT_LOAD                = 23
+    PRESENT_VELOCITY            = 24
+    PRESENT_POSITION            = 25
+    VELOCITY_TRAJECTORY         = 26
+    POSITION_TRAJECTORY         = 27
+    PRESENT_INPUT_VOLTAGE       = 28
+    PRESENT_TEMPERATURE         = 29
+    BACKUP_READY                = 30
+
+RAM_ROW_NAME_DICT = {
+    RAM.ID                          : "ID",
+    RAM.TORQUE                      : "Torque",
+    RAM.LED                         : "LED",
+    RAM.STATUS_RETURN_LEVEL         : "Status Return Level",
+    RAM.REGISTERED_INSTRUCTION      : "Registered Instruction",
+    RAM.HARDWARE_ERROR_STATUS       : "Hardware Error Status",
+    RAM.VELOCITY_I_GAIN             : "Velocity I Gain",
+    RAM.VELOCITY_P_GAIN             : "Velocity P Gain",
+    RAM.POSITION_D_GAIN             : "Position D Gain",
+    RAM.POSITION_I_GAIN             : "Position I Gain",
+    RAM.POSITION_P_GAIN             : "Position P Gain",
+    RAM.FEEDFORWARD_2ND_GAIN        : "Feedforward 2nd Gain",
+    RAM.FEEDFORWARD_1ST_GAIN        : "Feedforward 1st Gain",
+    RAM.BUS_WATCHDOG                : "Bus Watchdog",
+    RAM.GOAL_PWM                    : "Goal PWM",
+    RAM.GOAL_VELOCITY               : "Goal Velocity",
+    RAM.PROFILE_ACCELERATION        : "Profile Acceleration",
+    RAM.PROFILE_VELOCITY            : "Profile Velocity",
+    RAM.GOAL_POSITION               : "Goal Position",
+    RAM.REALTIME_TICK               : "Realtime Tick",
+    RAM.MOVING                      : "Moving",
+    RAM.MOVING_STATUS               : "Moving Status",
+    RAM.PRESENT_PWM                 : "Present PWM",
+    RAM.PRESENT_LOAD                : "Present Load",
+    RAM.PRESENT_VELOCITY            : "Present Velocity",
+    RAM.PRESENT_POSITION            : "Present Position",
+    RAM.VELOCITY_TRAJECTORY         : "Velocity Trajectory",
+    RAM.POSITION_TRAJECTORY         : "Position Trajectory",
+    RAM.PRESENT_INPUT_VOLTAGE       : "Present Input Voltage",
+    RAM.PRESENT_TEMPERATURE         : "Present Temperature",
+    RAM.BACKUP_READY                : "Backup Ready"
+}
+
 def build_motors_selector_page(script_op):
     page_motor_selector = script_op.appendCustomPage('Selector')
     global MOTORS
@@ -210,12 +332,12 @@ def build_velocity_page(script_op):
 def fill_initial_eeprom_table():
     EEPROM_TABLE.clear()
     EEPROM_TABLE.appendCol()
-    EEPROM_TABLE.appendRow(['ID','Model Number','Model Information','Firmware Version','Baud Rate','Return Delay Time','Drive Mode','Operating Mode','Secondary(Shadow) ID','Protocol Type','Homing Offset','Moving Threshold','Temperature Limit','Max Voltage Limit','Min Voltage Limit','PWM Limit','Velocity Limit','Max Position Limit','Min Position Limit','Startup Configuration','Shutdown'])
+    EEPROM_TABLE.appendRow([row_name for key, row_name in EEPROM_ROW_NAME_DICT.items()])
 
 def fill_initial_ram_table():
     RAM_TABLE.clear()
     RAM_TABLE.appendCol()
-    RAM_TABLE.appendRow(['ID','Torque Enable','LED','Status Return Level','Registered Instruction','Hardware Error Status','Velocity I Gain','Velocity P Gain','Position D Gain','Position I Gain','Position P Gain','Feedforward 2nd Gain','Feedforward 1st Gain','Bus Watchdog','Goal PWM','Goal Velocity','Profile Acceleration','Profile Velocity','Goal Position','Realtime Tick','Moving','Moving Status','Present PWM','Present Load','Present Velocity','Present Position','Velocity Trajectory','Position Trajectory','Present Input Voltage','Present Temperature','Backup Ready'])
+    RAM_TABLE.appendRow([row_name for key, row_name in RAM_ROW_NAME_DICT.items()])
 
 def fill_debug_info(messages: List[str]):
     DEBUG_TABLE.clear()
@@ -237,15 +359,27 @@ def test_list_motors():
         messages.append(motor.ID)
     fill_debug_info(messages)
 
-def get_selected_motors_id() -> List[int]:
-    selected_motors_id = []
+def get_selected_motors() -> List[Motor]:
+    selected_motors = []
+
     global MOTORS
     for motor in MOTORS:
         is_selected = CONTROLLER_OP.par[f'Motor{motor.ID}'].val
         if is_selected:
-            selected_motors_id.append(motor.ID)
+            selected_motors.append(motor)
 
-    return selected_motors_id
+    return selected_motors
+
+def get_row_index_by_motor_id(motor_id: int):
+    for index in range(1, RAM_TABLE.numRows):
+        if motor_id == int(RAM_TABLE[index, 0]):
+            return index
+
+def write_to_table(val, table, row: int, col: int):
+    table[row, col] = str(val)
+
+def read_from_table(table, row: int, col: int) -> str:
+    return table[row, col]
 
 def onSetupParameters(scriptOp):
     '''
@@ -268,18 +402,76 @@ def onSetupParameters(scriptOp):
 
     return
 
+def check_comm_result(comm_result, error):
+    if comm_result != COMM_SUCCESS:
+        raise CommError(f"{PACKET_HANDLER.getTxRxResult(comm_result)}")
+    elif error != 0:
+        raise CommError(f"{PACKET_HANDLER.getRxPacketError(error)}")
+
+def handler_read_torque():
+    motors = get_selected_motors()
+
+    for motor in motors:
+        torque, comm_result, error = PACKET_HANDLER.read1ByteTxRx(PORT_HANDLER, motor.ID, motor.ControlTable.Torque.Address)
+        check_comm_result(comm_result, error)
+        write_to_table(torque, RAM_TABLE, get_row_index_by_motor_id(motor.ID), RAM.TORQUE.value)
+
+def handler_write_torque():
+    motors = get_selected_motors()
+
+    for motor in motors:
+        try:
+            torque = int(read_from_table(RAM_TABLE, get_row_index_by_motor_id(motor.ID), RAM.TORQUE.value))
+        except ValueError:
+            print(f"MotorID {motor.ID} torque value is empty disabling motor torque instead")
+            torque = 0
+
+        comm_result, error = PACKET_HANDLER.write1ByteTxRx(PORT_HANDLER, motor.ID, motor.ControlTable.Torque.Address, bool(torque))
+
+        check_comm_result(comm_result, error)
+        print(f"Writing Torque: {torque} to motor_ID: {motor.ID}")
+
+def handler_read_current_position():
+    motors = get_selected_motors()
+    groupBulkRead = GroupBulkRead(PORT_HANDLER, PACKET_HANDLER)
+
+    # Add parameter storage for present position of all motors
+    for motor in motors:
+        addparam_result = groupBulkRead.addParam(motor.ID, motor.ControlTable.PresentPosition.Address, motor.ControlTable.PresentPosition.DataSize)
+
+        if addparam_result != True:
+            raise CommError(f"[ID:{motor.ID}] groupBulkRead PresentPosition failed")
+
+    # send bulk read request to port
+    comm_result = groupBulkRead.txRxPacket()
+    check_comm_result(comm_result)
+
+    # retrieve data and write it to table for each selected motor
+    for motor in motors:
+        getdata_result = groupBulkRead.isAvailable(motor.ID, motor.ControlTable.PresentPosition.Address, motor.ControlTable.PresentPosition.DataSize)
+        if getdata_result != True:
+            raise CommError(f"[ID:{motor.ID}] groupBulkRead getdata failed")
+
+        # Get present position value
+        present_position = groupBulkRead.getData(motor.ID, motor.ControlTable.PresentPosition.Address, motor.ControlTable.PresentPosition.DataSize)
+        write_to_table(present_position, RAM_TABLE, get_row_index_by_motor_id(motor.ID), RAM.PRESENT_POSITION)
+
+def handler_write_goal_velocity():
+    raise NotImplementedError
+
 def onPulse(par):
     '''
     called whenever custom pulse parameter is pushed
     '''
-
     button_name = par.name
     if button_name == READ_TORQUE:
-        print(get_selected_motors_id())
+        handler_read_torque()
     elif button_name == WRITE_TORQUE:
-        pass
+        handler_write_torque()
     elif button_name == READ_CURRENT_POSITION:
-        pass
+        handler_read_current_position()
+    elif button_name == WRITE_GOAL_VELOCITY:
+        handler_write_goal_velocity()
     elif button_name == READ_EEPROM:
         raise NotImplementedError
     elif button_name == WRITE_EEPROP:
