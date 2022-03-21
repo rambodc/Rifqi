@@ -96,7 +96,6 @@ class Motor:
         self.ID = id
         self.ControlTable = ControlTable(motor_type)
 
-
 ################################################################################################################################
 # Dynamixel
 PORT_HANDLER = PortHandler(get_port_name())
@@ -420,11 +419,11 @@ def handler_write_torque():
     motors = get_selected_motors()
 
     for motor in motors:
+        torque = 0
         try:
             torque = int(read_from_table(RAM_TABLE, get_row_index_by_motor_id(motor.ID), RAM.TORQUE.value))
         except ValueError:
             print(f"MotorID {motor.ID} torque value is empty disabling motor torque instead")
-            torque = 0
 
         comm_result, error = PACKET_HANDLER.write1ByteTxRx(PORT_HANDLER, motor.ID, motor.ControlTable.Torque.Address, bool(torque))
 
@@ -440,7 +439,7 @@ def handler_read_current_position():
         addparam_result = groupBulkRead.addParam(motor.ID, motor.ControlTable.PresentPosition.Address, motor.ControlTable.PresentPosition.DataSize)
 
         if addparam_result != True:
-            raise CommError(f"[ID:{motor.ID}] groupBulkRead PresentPosition failed")
+            raise CommError(f"[ID:{motor.ID}] groupBulkRead addParam PresentPosition failed")
 
     # send bulk read request to port
     comm_result = groupBulkRead.txRxPacket()
@@ -456,8 +455,51 @@ def handler_read_current_position():
         present_position = groupBulkRead.getData(motor.ID, motor.ControlTable.PresentPosition.Address, motor.ControlTable.PresentPosition.DataSize)
         write_to_table(present_position, RAM_TABLE, get_row_index_by_motor_id(motor.ID), RAM.PRESENT_POSITION)
 
+    # Clear bulkread parameter storage
+    groupBulkRead.clearParam()
+
+def set_operating_mode(motor: Motor, operating_mode: OperatingMode):
+    comm_result, error = PACKET_HANDLER.write1ByteTxRx(PORT_HANDLER, motor.ID, motor.ControlTable.OperatingMode.Address, operating_mode.value)
+    check_comm_result(comm_result, error)
+    print(f"Setting motor: {motor.ID} operating mode to {operating_mode}")
+
 def handler_write_goal_velocity():
-    raise NotImplementedError
+    motors = get_selected_motors()
+    groupBulkWrite = GroupBulkWrite(PORT_HANDLER, PACKET_HANDLER)
+
+    # Setting mode to velocity control
+    for motor in motors:
+        set_operating_mode(motor, OperatingMode.VELOCITY_CONTROL)
+
+    # Add parameter storage for present position of all motors
+    for motor in motors:
+        goal_velocity = 0
+        try:
+            goal_velocity = int(read_from_table(RAM_TABLE, get_row_index_by_motor_id(motor.ID), RAM.GOAL_VELOCITY.value))
+        except ValueError:
+            print(f"MotorID {motor.ID} goal velocity value is empty sending 0 velocity instead")
+
+        param_goal_position = [ DXL_LOBYTE( DXL_LOWORD( goal_velocity ) ),
+                                DXL_HIBYTE( DXL_LOWORD( goal_velocity ) ),
+                                DXL_LOBYTE( DXL_HIWORD( goal_velocity ) ),
+                                DXL_HIBYTE( DXL_HIWORD( goal_velocity ) )]
+
+        addparam_result = groupBulkWrite.addParam(
+                            motor.ID,
+                            motor.ControlTable.GoalVelocity.Address,
+                            motor.ControlTable.GoalVelocity.DataSize,
+                            param_goal_position)
+
+        if addparam_result != True:
+            raise CommError(f"[ID:{motor.ID}] groupBulkRead addParam GoalVelocity failed")
+
+    # Send goal velocity in bulk (all command will be executed at the same time)
+    comm_result = groupBulkWrite.txPacket()
+    if comm_result != COMM_SUCCESS:
+        raise CommError(f"{PACKET_HANDLER.getTxRxResult(comm_result)}")
+
+    # Clear bulkwrite parameter storage
+    groupBulkWrite.clearParam()
 
 def onPulse(par):
     '''
