@@ -600,5 +600,6 @@ def onPulse(par):
 
 def onCook(scriptOp):
     scriptOp.clear()
-    print(datetime.now())
+    # print(datetime.now())
+    handler_read_current_position()
     return
