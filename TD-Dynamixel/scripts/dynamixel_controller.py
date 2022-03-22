@@ -1,5 +1,6 @@
 from enum import Enum
 from typing import List
+from datetime import datetime
 import os
 
 # Import suitable modules based on current OS (Windows/Mac)
@@ -79,7 +80,8 @@ class ControlTable:
         if motor_type == 'X_SERIES' or motor_type == 'MX_SERIES':
             self.OperatingMode         = ControlData(11, 1, DataAccess.READ_AND_WRITE)
             self.Torque                = ControlData(64, 1, DataAccess.READ_AND_WRITE)
-            self.GoalVelocity          = ControlData(116, 4, DataAccess.READ_AND_WRITE)
+            self.GoalVelocity          = ControlData(104, 4, DataAccess.READ_AND_WRITE)
+            self.GoalPosition          = ControlData(116, 4, DataAccess.READ_AND_WRITE)
             self.PresentPosition       = ControlData(132, 4, DataAccess.READ_AND_WRITE)
         elif motor_type == 'PRO_SERIES':
             raise NotImplementedError
@@ -161,7 +163,7 @@ def dummy_broadcast_ping() -> List[int]:
     '''
     Broadcast ping simulation for getting number of connected motors and ther id's
     '''
-    motors_id = [1, 2, 15]
+    motors_id = [1, 2]
 
     for motor_id in motors_id:
         RAM_TABLE.appendRow([motor_id])
@@ -179,6 +181,7 @@ WRITE_RAM = 'Writeram'
 WRITE_TORQUE = 'Writetorque'
 READ_TORQUE = 'Readtorque'
 READ_CURRENT_POSITION = 'Readposition'
+WRITE_GOAL_POSITION = 'Writegoalposition'
 WRITE_GOAL_VELOCITY = 'Writegoalvelocity'
 
 MOTORS: List[Motor] = []
@@ -326,7 +329,8 @@ def build_torque_page(script_op):
 
 def build_position_page(script_op):
     page_position = script_op.appendCustomPage('Position')
-    page_position.appendPulse(READ_CURRENT_POSITION, label='Read Position')
+    page_position.appendPulse(READ_CURRENT_POSITION, label='Read Current Position')
+    page_position.appendPulse(WRITE_GOAL_POSITION, label='Write Goal Position')
 
 def build_velocity_page(script_op):
     page_velocity = script_op.appendCustomPage('Velocity')
@@ -383,29 +387,6 @@ def write_to_table(val, table, row: int, col: int):
 
 def read_from_table(table, row: int, col: int) -> str:
     return table[row, col]
-
-def onSetupParameters(scriptOp):
-    '''
-    Setting up user interface and filling initial EEPROM and RAM from connected motors
-    '''
-    open_port()
-    fill_initial_eeprom_table()
-    fill_initial_ram_table()
-    # search for available motors
-    # motors_id = dummy_broadcast_ping()
-    motors_id = broadcast_ping()
-
-    # create motors based on GlobalMotorsConfig and check wether user the ID is present in the network
-    update_connected_motors(motors_id)
-
-    build_motors_selector_page(scriptOp)
-    build_eeprom_page(scriptOp)
-    build_ram_page(scriptOp)
-    build_torque_page(scriptOp)
-    build_position_page(scriptOp)
-    build_velocity_page(scriptOp)
-
-    return
 
 def check_comm_result(comm_result, error):
     if comm_result != COMM_SUCCESS:
@@ -470,13 +451,42 @@ def set_operating_mode(motor: Motor, operating_mode: OperatingMode):
     check_comm_result(comm_result, error)
     print(f"Setting motor: {motor.ID} operating mode to {operating_mode}")
 
-def handler_write_goal_velocity():
+def handler_write_goal_position():
     motors = get_selected_motors()
     groupBulkWrite = GroupBulkWrite(PORT_HANDLER, PACKET_HANDLER)
 
-    # Setting mode to velocity control
     for motor in motors:
-        set_operating_mode(motor, OperatingMode.VELOCITY_CONTROL)
+        goal_position = 0
+        try:
+            goal_position = int(read_from_table(RAM_TABLE, get_row_index_by_motor_id(motor.ID), RAM.GOAL_POSITION.value))
+        except ValueError:
+            print(f"MotorID {motor.ID} goal position value is empty sending 0 position instead")
+
+        param_goal_position = [ DXL_LOBYTE( DXL_LOWORD( goal_position ) ),
+                                DXL_HIBYTE( DXL_LOWORD( goal_position ) ),
+                                DXL_LOBYTE( DXL_HIWORD( goal_position ) ),
+                                DXL_HIBYTE( DXL_HIWORD( goal_position ) )]
+
+        addparam_result = groupBulkWrite.addParam(
+                            motor.ID,
+                            motor.ControlTable.GoalPosition.Address,
+                            motor.ControlTable.GoalPosition.DataSize,
+                            param_goal_position)
+
+        if addparam_result != True:
+            raise CommError(f"[ID:{motor.ID}] groupBulkRead addParam GoalPosition failed")
+
+    # Send goal velocity in bulk (all command will be executed at the same time)
+    comm_result = groupBulkWrite.txPacket()
+    if comm_result != COMM_SUCCESS:
+        raise CommError(f"{PACKET_HANDLER.getTxRxResult(comm_result)}")
+
+    # Clear bulkwrite parameter storage
+    groupBulkWrite.clearParam()
+
+def handler_write_goal_velocity():
+    motors = get_selected_motors()
+    groupBulkWrite = GroupBulkWrite(PORT_HANDLER, PACKET_HANDLER)
 
     # Add parameter storage for present position of all motors
     for motor in motors:
@@ -486,7 +496,7 @@ def handler_write_goal_velocity():
         except ValueError:
             print(f"MotorID {motor.ID} goal velocity value is empty sending 0 velocity instead")
 
-        param_goal_position = [ DXL_LOBYTE( DXL_LOWORD( goal_velocity ) ),
+        param_goal_velocity = [ DXL_LOBYTE( DXL_LOWORD( goal_velocity ) ),
                                 DXL_HIBYTE( DXL_LOWORD( goal_velocity ) ),
                                 DXL_LOBYTE( DXL_HIWORD( goal_velocity ) ),
                                 DXL_HIBYTE( DXL_HIWORD( goal_velocity ) )]
@@ -495,7 +505,7 @@ def handler_write_goal_velocity():
                             motor.ID,
                             motor.ControlTable.GoalVelocity.Address,
                             motor.ControlTable.GoalVelocity.DataSize,
-                            param_goal_position)
+                            param_goal_velocity)
 
         if addparam_result != True:
             raise CommError(f"[ID:{motor.ID}] groupBulkRead addParam GoalVelocity failed")
@@ -508,6 +518,36 @@ def handler_write_goal_velocity():
     # Clear bulkwrite parameter storage
     groupBulkWrite.clearParam()
 
+################################################################################################################################
+# Operator callbacks
+def onSetupParameters(scriptOp):
+    '''
+    Setting up user interface and filling initial EEPROM and RAM from connected motors
+    '''
+    # Check if the port is open. Close and re-open it
+    if PORT_HANDLER.is_open:
+        close_port()
+    open_port()
+
+    fill_initial_eeprom_table()
+    fill_initial_ram_table()
+
+    # search for available motors
+    # motors_id = dummy_broadcast_ping()
+    motors_id = broadcast_ping()
+
+    # create motors based on GlobalMotorsConfig and check wether user the ID is present in the network
+    update_connected_motors(motors_id)
+
+    build_motors_selector_page(scriptOp)
+    build_eeprom_page(scriptOp)
+    build_ram_page(scriptOp)
+    build_torque_page(scriptOp)
+    build_position_page(scriptOp)
+    build_velocity_page(scriptOp)
+
+    return
+
 def onPulse(par):
     '''
     called whenever custom pulse parameter is pushed
@@ -519,6 +559,8 @@ def onPulse(par):
         handler_write_torque()
     elif button_name == READ_CURRENT_POSITION:
         handler_read_current_position()
+    elif button_name == WRITE_GOAL_POSITION:
+        handler_write_goal_position()
     elif button_name == WRITE_GOAL_VELOCITY:
         handler_write_goal_velocity()
     elif button_name == READ_EEPROM:
@@ -534,4 +576,5 @@ def onPulse(par):
 
 def onCook(scriptOp):
     scriptOp.clear()
+    print(datetime.now())
     return
