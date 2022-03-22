@@ -518,6 +518,30 @@ def handler_write_goal_velocity():
     # Clear bulkwrite parameter storage
     groupBulkWrite.clearParam()
 
+def handler_read_eeprom():
+    # read operating mode only for now
+    motors = get_selected_motors()
+
+    for motor in motors:
+        operating_mode, comm_result, error = PACKET_HANDLER.read1ByteTxRx(PORT_HANDLER, motor.ID, motor.ControlTable.OperatingMode.Address)
+        check_comm_result(comm_result, error)
+        write_to_table(operating_mode, EEPROM_TABLE, get_row_index_by_motor_id(motor.ID), EEPROM.OPERATING_MODE.value)
+
+def handler_write_eeprom():
+    # write operating mode only for now
+    motors = get_selected_motors()
+
+    for motor in motors:
+        operating_mode = 0
+        try:
+            operating_mode = int(read_from_table(EEPROM_TABLE, get_row_index_by_motor_id(motor.ID), EEPROM.OPERATING_MODE.value))
+        except ValueError:
+            print(f"MotorID {motor.ID} operating mode value is empty not writing any data to the motor")
+            continue
+
+        comm_result, error = PACKET_HANDLER.write1ByteTxRx(PORT_HANDLER, motor.ID, motor.ControlTable.OperatingMode.Address, operating_mode)
+        check_comm_result(comm_result, error)
+
 ################################################################################################################################
 # Operator callbacks
 def onSetupParameters(scriptOp):
@@ -564,9 +588,9 @@ def onPulse(par):
     elif button_name == WRITE_GOAL_VELOCITY:
         handler_write_goal_velocity()
     elif button_name == READ_EEPROM:
-        raise NotImplementedError
+        handler_read_eeprom()
     elif button_name == WRITE_EEPROP:
-        raise NotImplementedError
+        handler_write_eeprom()
     elif button_name == READ_RAM:
         raise NotImplementedError
     elif button_name == WRITE_RAM:
