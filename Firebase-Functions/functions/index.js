@@ -2,6 +2,9 @@
 // Cloud Functions and set up triggers.
 const functions = require("firebase-functions");
 
+// XRPL library
+const xrpl = require("xrpl");
+
 // The Firebase Admin SDK to access Firestore.
 const admin = require("firebase-admin");
 admin.initializeApp();
@@ -19,11 +22,11 @@ exports.addMessage = functions.https.onRequest(async (req, res) => {
 });
 
 // Listens for new messages added to /messages/:documentId/original
-// and creates an
-// uppercase version of the message to /messages/:documentId/uppercase
+// and creates an uppercase version of the message
+// to /messages/:documentId/uppercase
 exports.makeUppercase = functions.firestore.document("/messages/{documentId}")
     .onCreate((snap, context) => {
-    // Grab the current value of what was written to Firestore.
+      // Grab the current value of what was written to Firestore.
       const original = snap.data().original;
 
       // Access the parameter `{documentId}` with `context.params`
@@ -38,3 +41,21 @@ exports.makeUppercase = functions.firestore.document("/messages/{documentId}")
       // Setting an 'uppercase' field in Firestore document returns a Promise.
       return snap.ref.set({uppercase}, {merge: true});
     });
+
+exports.checkXRPInfo = functions.https.onRequest(async (req, res) => {
+  const xrpAddress = req.query.text;
+
+  const client = new xrpl.Client("wss://s.altnet.rippletest.net:51233");
+
+  await client.connect();
+  const response = await client.request({
+    "command": "account_info",
+    "account": xrpAddress,
+    "ledger_index": "validated",
+  });
+  client.disconnect();
+
+  const accountData = response.result.account_data;
+
+  res.json(accountData);
+});
