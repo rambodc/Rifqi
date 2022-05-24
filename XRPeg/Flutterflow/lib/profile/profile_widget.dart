@@ -4,6 +4,7 @@ import '../flutter_flow/flutter_flow_icon_button.dart';
 import '../flutter_flow/flutter_flow_theme.dart';
 import '../flutter_flow/flutter_flow_util.dart';
 import '../flutter_flow/flutter_flow_widgets.dart';
+import '../home_page_logged_in/home_page_logged_in_widget.dart';
 import '../sign_in_and_sign_up/sign_in_and_sign_up_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -98,6 +99,27 @@ class _ProfileWidgetState extends State<ProfileWidget> {
                         ],
                       ),
                     ),
+                  ),
+                  Column(
+                    mainAxisSize: MainAxisSize.max,
+                    children: [
+                      InkWell(
+                        onTap: () async {
+                          await Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => HomePageLoggedInWidget(),
+                            ),
+                          );
+                        },
+                        child: Image.asset(
+                          'assets/images/2022-05-23_14-26-removebg-preview.png',
+                          width: 100,
+                          height: 100,
+                          fit: BoxFit.cover,
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
