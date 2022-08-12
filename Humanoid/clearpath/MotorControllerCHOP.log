@@ -1,0 +1,20 @@
+﻿  MotorControllerCHOP.cpp
+C:\Users\Rifqi Dewangga\Documents\git\rifqi\Rifqi\MotorControllerCHOP\MotorControllerCHOP\CHOP_CPlusPlusBase.h(54,1): warning C4099: 'CHOP_PluginInfo': type name first seen using 'class' now seen using 'struct'
+C:\Users\Rifqi Dewangga\Documents\git\rifqi\Rifqi\MotorControllerCHOP\MotorControllerCHOP\CHOP_CPlusPlusBase.h(53): message : see declaration of 'CHOP_PluginInfo'
+C:\Users\Rifqi Dewangga\Documents\git\rifqi\Rifqi\MotorControllerCHOP\MotorControllerCHOP\MotorControllerCHOP.cpp(162,7): warning C4101: 'tempBuffer': unreferenced local variable
+C:\Users\Rifqi Dewangga\Documents\git\rifqi\Rifqi\MotorControllerCHOP\MotorControllerCHOP\MotorControllerCHOP.cpp(223,31): warning C4267: 'argument': conversion from 'size_t' to 'int', possible loss of data
+C:\Users\Rifqi Dewangga\Documents\git\rifqi\Rifqi\MotorControllerCHOP\MotorControllerCHOP\MotorControllerCHOP.cpp(233,41): warning C4244: 'argument': conversion from 'double' to 'int32_t', possible loss of data
+C:\Users\Rifqi Dewangga\Documents\git\rifqi\Rifqi\MotorControllerCHOP\MotorControllerCHOP\MotorControllerCHOP.cpp(247,21): warning C4267: 'argument': conversion from 'size_t' to 'int', possible loss of data
+  SCHubController.cpp
+C:\Users\Rifqi Dewangga\Documents\git\rifqi\Rifqi\MotorControllerCHOP\MotorControllerCHOP\SCHubController.cpp(77,16): warning C4101: 'theErr': unreferenced local variable
+C:\Users\Rifqi Dewangga\Documents\git\rifqi\Rifqi\MotorControllerCHOP\MotorControllerCHOP\SCHubController.cpp(139,16): warning C4101: 'theErr': unreferenced local variable
+     Creating library C:\Users\Rifqi Dewangga\Documents\git\rifqi\Rifqi\MotorControllerCHOP\MotorControllerCHOP\Release\MotorControllerCHOP.lib and object C:\Users\Rifqi Dewangga\Documents\git\rifqi\Rifqi\MotorControllerCHOP\MotorControllerCHOP\Release\MotorControllerCHOP.exp
+  Generating code
+  Previous IPDB not found, fall back to full compilation.
+  All 503 functions were compiled because no usable IPDB/IOBJ from previous compilation was found.
+  Finished generating code
+  MotorControllerCHOP.vcxproj -> C:\Users\Rifqi Dewangga\Documents\git\rifqi\Rifqi\MotorControllerCHOP\MotorControllerCHOP\Release\MotorControllerCHOP.dll
+  C:\Users\Rifqi Dewangga\Documents\git\rifqi\Rifqi\MotorControllerCHOP\Dependencies\ClearView\lib\win\Release\x64\MNuserDriver20.xml
+  C:\Users\Rifqi Dewangga\Documents\git\rifqi\Rifqi\MotorControllerCHOP\Dependencies\ClearView\lib\win\Release\x64\sFoundation20.dll
+  C:\Users\Rifqi Dewangga\Documents\git\rifqi\Rifqi\MotorControllerCHOP\Dependencies\ClearView\lib\win\Release\x64\sFoundation20.lib
+  3 File(s) copied
